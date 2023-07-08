@@ -5,7 +5,13 @@
 resources:
   repositories:
     - repository: self
-      trigger: none
+      trigger:
+        branches:
+          include:
+          - main
+        paths:
+          include:
+          - src/web/*
 
 stages:
 - stage: Build
@@ -53,3 +59,27 @@ stages:
         PathtoPublish: '$(Build.SourcesDirectory)/.azure/bicep/webapp.bicep'
         ArtifactName: 'Bicep'
         publishLocation: 'Container'
+- stage: Deploy
+  displayName: Deploy to an Azure Web App
+  jobs:
+  - deployment: Deploy
+    environment: approvals
+    pool:
+      vmImage: 'windows-2019'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'Website'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: 'Azure Pass - Sponsorship (e92d4dbd-7e0d-46d6-a769-a857ba0eafa7)'
+              appType: 'webApp'
+              WebAppName: 'eshoponWebYAML3008314551'
+              packageForLinux: '$(Build.ArtifactStagingDirectory)/**/Web.zip'
